@@ -28,8 +28,7 @@ use utils::eventfd::EventFd;
 use utils::net::Tap;
 use virtio_gen::virtio_net::{
     virtio_net_hdr_v1, VIRTIO_F_VERSION_1, VIRTIO_NET_F_CSUM, VIRTIO_NET_F_GUEST_CSUM,
-    VIRTIO_NET_F_GUEST_TSO4, VIRTIO_NET_F_GUEST_UFO, VIRTIO_NET_F_HOST_TSO4, VIRTIO_NET_F_HOST_UFO,
-    VIRTIO_NET_F_MAC,
+    VIRTIO_NET_F_GUEST_TSO4, VIRTIO_NET_F_HOST_TSO4, VIRTIO_NET_F_MAC,
 };
 use vm_memory::{ByteValued, Bytes, GuestAddress, GuestMemoryError, GuestMemoryMmap};
 
@@ -123,10 +122,8 @@ impl Net {
         let tap = Tap::open_named(&tap_if_name).map_err(Error::TapOpen)?;
 
         // Set offload flags to match the virtio features below.
-        tap.set_offload(
-            net_gen::TUN_F_CSUM | net_gen::TUN_F_UFO | net_gen::TUN_F_TSO4 | net_gen::TUN_F_TSO6,
-        )
-        .map_err(Error::TapSetOffload)?;
+        tap.set_offload(net_gen::TUN_F_CSUM | net_gen::TUN_F_TSO4 | net_gen::TUN_F_TSO6)
+            .map_err(Error::TapSetOffload)?;
 
         let vnet_hdr_size = vnet_hdr_len() as i32;
         tap.set_vnet_hdr_size(vnet_hdr_size)
@@ -135,9 +132,7 @@ impl Net {
         let mut avail_features = 1 << VIRTIO_NET_F_GUEST_CSUM
             | 1 << VIRTIO_NET_F_CSUM
             | 1 << VIRTIO_NET_F_GUEST_TSO4
-            | 1 << VIRTIO_NET_F_GUEST_UFO
             | 1 << VIRTIO_NET_F_HOST_TSO4
-            | 1 << VIRTIO_NET_F_HOST_UFO
             | 1 << VIRTIO_F_VERSION_1;
 
         let mut config_space = ConfigSpace::default();
@@ -782,8 +777,7 @@ pub(crate) mod tests {
     use utils::epoll::{EpollEvent, EventSet};
     use virtio_gen::virtio_net::{
         virtio_net_hdr_v1, VIRTIO_F_VERSION_1, VIRTIO_NET_F_CSUM, VIRTIO_NET_F_GUEST_CSUM,
-        VIRTIO_NET_F_GUEST_TSO4, VIRTIO_NET_F_GUEST_UFO, VIRTIO_NET_F_HOST_TSO4,
-        VIRTIO_NET_F_HOST_UFO, VIRTIO_NET_F_MAC,
+        VIRTIO_NET_F_GUEST_TSO4, VIRTIO_NET_F_HOST_TSO4, VIRTIO_NET_F_MAC,
     };
 
     static NEXT_INDEX: AtomicUsize = AtomicUsize::new(1);
@@ -930,9 +924,7 @@ pub(crate) mod tests {
             | 1 << VIRTIO_NET_F_CSUM
             | 1 << VIRTIO_NET_F_GUEST_TSO4
             | 1 << VIRTIO_NET_F_MAC
-            | 1 << VIRTIO_NET_F_GUEST_UFO
             | 1 << VIRTIO_NET_F_HOST_TSO4
-            | 1 << VIRTIO_NET_F_HOST_UFO
             | 1 << VIRTIO_F_VERSION_1;
 
         assert_eq!(net.avail_features_by_page(0), features as u32);
